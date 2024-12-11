@@ -1,0 +1,62 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!DOCTYPE mapper PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN" "http://mybatis.org/dtd/mybatis-3-mapper.dtd">
+<mapper namespace="com.example.mapper.OrderMapper">
+
+    <!-- 결제 내역 조회 쿼리 (페이지네이션 적용/) -->
+    <select id="getPaymentHistory" resultType="java.util.HashMap">
+        SELECT 
+            o.order_id AS orderId,
+            o.created_at AS createdAt,
+            SUM(oi.quantity * oi.unit_price) AS totalAmount
+        FROM 
+            orders o
+        JOIN 
+            orderitem oi ON o.order_id = oi.order_id
+        GROUP BY 
+            o.order_id, o.created_at
+        ORDER BY 
+            o.created_at DESC
+        LIMIT #{pageSize} OFFSET #{offset}  <!-- pageSize와 offset을 매개변수로 전달 -->
+    </select>
+
+    <!-- 결제 내역의 전체 수를 반환하는 쿼리 -->
+    <select id="getTotalPaymentHistoryCount" resultType="int">
+        SELECT COUNT(DISTINCT o.order_id)
+        FROM orders o
+        JOIN orderitem oi ON o.order_id = oi.order_id
+    </select>
+
+<!-- 새로운 결제 내역 조회 쿼리 (storeId 기반, 페이지네이션 적용) -->
+    <select id="getPaymentHistoryByStoreId" resultType="java.util.HashMap">
+    SELECT 
+        o.order_id AS orderId,
+        o.created_at AS createdAt,
+        SUM(oi.quantity * oi.unit_price) AS totalAmount
+    FROM 
+        orders o
+    JOIN 
+        orderitem oi ON o.order_id = oi.order_id
+    JOIN 
+        tables t ON o.table_id = t.table_id
+    WHERE 
+        t.store_id = #{storeId}
+        AND o.created_at BETWEEN #{startDate} AND #{endDate}  <!-- 날짜 조건 추가 -->
+    GROUP BY 
+        o.order_id, o.created_at
+    ORDER BY 
+        o.created_at DESC
+    LIMIT #{pageSize} OFFSET #{offset}
+</select>
+
+
+    <!-- 특정 storeId에 대한 결제 내역의 전체 수를 반환하는 쿼리 -->
+    <select id="getTotalPaymentHistoryCountByStoreId" resultType="int">
+        SELECT COUNT(DISTINCT o.order_id)
+        FROM orders o
+        JOIN orderitem oi ON o.order_id = oi.order_id
+        JOIN tables t ON o.table_id = t.table_id  <!-- 테이블 조인 추가 -->
+        WHERE t.store_id = #{storeId}  <!-- storeId 조건 추가 -->
+    </select>
+
+    
+</mapper>
